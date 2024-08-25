@@ -1,21 +1,41 @@
 const express = require("express");
-const dotenv = require("dotenv");
+require("dotenv").config();
 const mongoose = require("mongoose");
+const { connection } = require("./src/config/db");
 const app = express();
+const port = process.env.PORT || 8000
+const expressJSDocSwagger = require("express-jsdoc-swagger");
+const cookieParser = require("cookie-parser");
 
-dotenv.config();
+const option = {
+    info: {
+        title: 'Movie Node JS Project',
+        version: '1.0.0'
+    },
+    security: {
+        BearerAuth: {
+            type: "http",
+            scheme: "bearer",
+        },
+    },
+    baseDir: __dirname,
+    swaggerUIPath: "/api-docs",
+    exposeSwaggerUI: true,
+    exposeApiDocs: false,
+    apiDocsPath: "/v3/api-docs",
+    notRequiredAsNullable: false,
+    apis: [
+        "./src/controller/*.js",
+        "./src/routes/*.js",]
+}
 
-//connect to db
-mongoose.connect(
-    process.env.DB_connect,
-    {useUnifiedTopology: true, useNewUrlParser: true},
-    ()=>console.log("Connected to DB")
-);
+expressJSDocSwagger(app)(option);
 
 app.use(express.json());
+app.use(cookieParser());
+connection()
 
-const productRouter = require("./routes/product");
+app.use("/api/v1/user", require("./src/routes/user"));
+app.use("/api/v1/movie", require("./src/routes/movie"));
 
-app.use("/api/products",productRouter);
-
-app.listen(3000,()=>{console.log("Server up and running on port 3000")});
+app.listen(port, () => console.log(`Server up and running on port ${port}`));
